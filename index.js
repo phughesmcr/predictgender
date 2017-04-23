@@ -1,7 +1,7 @@
 /* jshint node: true, esversion:6 */
 /**
  * predictGender
- * v0.0.1
+ * v0.0.2
  *
  * Predict the gender of a string's author.
  *
@@ -80,7 +80,6 @@
         matches[mWord] = match
       }
     }
-    console.log(matches)
     return matches
   }
 
@@ -90,15 +89,12 @@
     let weights = []
     for (let key in obj) {
       if (!obj.hasOwnProperty(key)) continue;
-      for (let match in obj[key]) {
-        if (!obj[key].hasOwnProperty(match)) continue;
-        if (Array.isArray(obj[key][match][0])) {
-          counts.push(obj[key][match][0].length)
-        } else {
-          counts.push(1)
-        }
-        weights.push(obj[key][match][1])
+      if (Array.isArray(obj[key][0][0])) {
+        counts.push(obj[key][0][0].length)
+      } else {
+        counts.push(1)
       }
+      weights.push(obj[key][0][1])
     }
     let sums = []
     counts.forEach(function (a, b) {
@@ -106,7 +102,6 @@
       sums.push(sum)
     })
     lex = sums.reduce(function (a, b) { return a + b }, 0)
-    console.log(lex)
     lex = Number(lex) + Number(int)
     return lex
   }
@@ -126,7 +121,6 @@
 
     let gender = 'Female'
     if (lex < 0) gender = 'Male'
-    console.log(lex)
 
     return gender
   }
