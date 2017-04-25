@@ -1,8 +1,8 @@
-# predictGender
+# predictgender - Node.js based Gender Prediction
 
 Predict the gender of a string's author.
 
-Input a string, get either "Male", or "Female" in return.
+Input a string, get either "male", or "female" in return.
 
 ## Usage
 ```Javascript
@@ -10,6 +10,8 @@ const pg = require('predictgender')
 let text = "A long string of text...."
 let gender = pg(text)
 ```
+
+Errors will return 'unable to predict gender'
 
 ## Acknowledgements
 
@@ -21,6 +23,6 @@ Using the gender lexicon data from http://www.wwbp.org/lexica.html
 
 Used under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported licence
 
-# Licence
+## Licence
 (C) 2017 P. Hughes
 [Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported](http://creativecommons.org/licenses/by-nc-sa/3.0/)

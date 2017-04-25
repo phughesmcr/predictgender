@@ -1,7 +1,6 @@
-/* jshint node: true, esversion:6 */
 /**
  * predictGender
- * v0.0.2
+ * v0.0.3
  *
  * Predict the gender of a string's author.
  *
@@ -45,7 +44,7 @@
     } else throw new Error('predictGender required happynodetokenizer and ./data/lexicon.json')
   }
 
-  // get multiple indexes helper
+  // get number of times el appears in an array
   Array.prototype.indexesOf = function (el) {
     var idxs = []
     for (var i = this.length - 1; i >= 0; i--) {
@@ -56,62 +55,105 @@
     return idxs
   }
 
+  /**
+  * @function getMatches
+  * @param  {array} arr {token array}
+  * @return {object} {object of matches in their respective categories}
+  */
   const getMatches = (arr) => {
     let matches = {}
-    for (var key in lexicon['GENDER']) {
-      if (!lexicon['GENDER'].hasOwnProperty(key)) continue;
+
+    // loop through the lexicon data
+    for (var key in lexicon.GENDER) {
+      if (!lexicon.GENDER.hasOwnProperty(key)) continue
       let match = []
-      let word = key
-      if (arr.indexOf(word) > -1) {
+      if (arr.indexOf(key) > -1) {  // if there is a match between lexicon and input
         let item
-        let mWord = word
-        let weight = lexicon['GENDER'][key]
-        let reps = arr.indexesOf(word).length
-        if (reps > 1) {
+        let weight = lexicon.GENDER[key]
+        let reps = arr.indexesOf(key).length  // numbder of times the word appears in the input text
+        if (reps > 1) { // if the word appears more than once, group all appearances in one array
           let words = []
           for (let i = 0; i < reps; i++) {
-            words.push(word)
+            words.push(key)
           }
           item = [words, weight]
         } else {
-          item = [word, weight]
+          item = [key, weight]
         }
         match.push(item)
-        matches[mWord] = match
+        matches[key] = match
       }
     }
+
+    // return matches object
     return matches
   }
 
+  /**
+  * Calculate the lexical value of matched items in object
+  * @function calcLex
+  * @param  {object} obj {object of matched items}
+  * @param  {number} wc  {total word count}
+  * @param  {number} int {intercept value}
+  * @return {number} {lexical value}
+  */
   const calcLex = (obj, wc, int) => {
-    let lex
-    let counts = []
-    let weights = []
+    let counts = []   // number of matched objects
+    let weights = []  // weights of matched objects
+
+    // loop through the matches and get the word frequency (counts) and weights
     for (let key in obj) {
-      if (!obj.hasOwnProperty(key)) continue;
-      if (Array.isArray(obj[key][0][0])) {
-        counts.push(obj[key][0][0].length)
+      if (!obj.hasOwnProperty(key)) continue
+      if (Array.isArray(obj[key][0][0])) {  // if the first item in the match is an array, the item is a duplicate
+        counts.push(obj[key][0][0].length)  // for duplicate matches
       } else {
-        counts.push(1)
+        counts.push(1)                      // for non-duplicates
       }
-      weights.push(obj[key][0][1])
+      weights.push(obj[key][0][1])          // corresponding weight
     }
+
+    // calculate lexical usage value
     let sums = []
     counts.forEach(function (a, b) {
-      let sum = (a / wc) * weights[a]
+      // (word frequency / total word count) * weight
+      let sum = (a / wc) * weights[b]
       sums.push(sum)
     })
+
+    // get sum of values
+    let lex
     lex = sums.reduce(function (a, b) { return a + b }, 0)
+
+    // add the intercept value
     lex = Number(lex) + Number(int)
+
+    // return final lexical value
     return lex
   }
 
-  const getGender = (arr) => {
+  /**
+  * @function predictGender
+  * @param  {string} str {string input}
+  * @return {type} {description}
+  */
+  const predictGender = (str) => {
+    // no string = crud output
+    if (str == null) return 'unable to determine gender'
+
+    // if str isn't a string, make it into one
+    if (typeof str !== 'string') str = str.toString()
+
+    // convert our string to tokens
+    const tokens = tokenizer(str)
+
+    // if there are no tokens return crud
+    if (tokens == null) return 'unable to determine gender'
+
     // get matches from array
-    const matches = getMatches(arr)
+    const matches = getMatches(tokens)
 
     // get wordcount
-    const wordcount = arr.length
+    const wordcount = tokens.length
 
     // set intercept value
     const int = (-0.06724152)
@@ -119,21 +161,12 @@
     // calculate lexical useage
     const lex = calcLex(matches, wordcount, int)
 
-    let gender = 'Female'
-    if (lex < 0) gender = 'Male'
+    // convert lex value to gender string
+    let gender = 'female'
+    if (lex < 0) gender = 'male'
 
+    // return gender string
     return gender
-  }
-
-  const predictGender = (str) => {
-    // make sure there is input before proceeding
-    if (str == null) throw new Error('Whoops! No input string found!')
-
-    // convert our string to tokens
-    const tokens = tokenizer(str)
-
-    // predict and return
-    return getGender(tokens)
   }
 
   predictGender.noConflict = function () {
