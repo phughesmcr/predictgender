@@ -1,6 +1,6 @@
 /**
  * predictGender
- * v0.0.3
+ * v0.0.4
  *
  * Predict the gender of a string's author.
  *
@@ -142,6 +142,9 @@
 
     // if str isn't a string, make it into one
     if (typeof str !== 'string') str = str.toString()
+
+    // trim whitespace and convert to lowercase
+    str = str.toLowerCase().trim()
 
     // convert our string to tokens
     const tokens = tokenizer(str)
