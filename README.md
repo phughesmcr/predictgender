@@ -11,7 +11,12 @@ let text = "A long string of text...."
 let gender = pg(text)
 ```
 
-Errors will return 'unable to predict gender'
+## Output
+```Javascript
+Male = 1
+Female = 2
+Errors or unknown = 0
+```
 
 ## Acknowledgements
 

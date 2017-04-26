@@ -1,6 +1,6 @@
 /**
  * predictGender
- * v0.0.4
+ * v0.1.0
  *
  * Predict the gender of a string's author.
  *
@@ -23,8 +23,12 @@
  * let gender = pg(text);
  * console.log(gender)
  *
+ * Male = 1
+ * Female = 2
+ * Errors or unknown = 0
+ *
  * @param {string} str  {input string}
- * @return {string} {predicted gender}
+ * @return {number} {predicted gender}
  */
 
 'use strict'
@@ -62,18 +66,20 @@
   */
   const getMatches = (arr) => {
     let matches = {}
-
     // loop through the lexicon data
-    for (var key in lexicon.GENDER) {
-      if (!lexicon.GENDER.hasOwnProperty(key)) continue
+    const data = lexicon.GENDER
+    let key
+    for (key in data) {
+      if (!data.hasOwnProperty(key)) continue
       let match = []
       if (arr.indexOf(key) > -1) {  // if there is a match between lexicon and input
         let item
-        let weight = lexicon.GENDER[key]
+        let weight = data[key]
         let reps = arr.indexesOf(key).length  // numbder of times the word appears in the input text
         if (reps > 1) { // if the word appears more than once, group all appearances in one array
           let words = []
-          for (let i = 0; i < reps; i++) {
+          let i
+          for (i = 0; i < reps; i++) {
             words.push(key)
           }
           item = [words, weight]
@@ -84,7 +90,6 @@
         matches[key] = match
       }
     }
-
     // return matches object
     return matches
   }
@@ -100,9 +105,9 @@
   const calcLex = (obj, wc, int) => {
     let counts = []   // number of matched objects
     let weights = []  // weights of matched objects
-
     // loop through the matches and get the word frequency (counts) and weights
-    for (let key in obj) {
+    let key
+    for (key in obj) {
       if (!obj.hasOwnProperty(key)) continue
       if (Array.isArray(obj[key][0][0])) {  // if the first item in the match is an array, the item is a duplicate
         counts.push(obj[key][0][0].length)  // for duplicate matches
@@ -111,24 +116,14 @@
       }
       weights.push(obj[key][0][1])          // corresponding weight
     }
-
     // calculate lexical usage value
-    let sums = []
+    let lex = 0
     counts.forEach(function (a, b) {
       // (word frequency / total word count) * weight
-      let sum = (a / wc) * weights[b]
-      sums.push(sum)
+      lex += (a / wc) * weights[b]
     })
-
-    // get sum of values
-    let lex
-    lex = sums.reduce(function (a, b) { return a + b }, 0)
-
-    // add the intercept value
-    lex = Number(lex) + Number(int)
-
-    // return final lexical value
-    return lex
+    // return final lexical value + intercept
+    return lex + int
   }
 
   /**
@@ -137,38 +132,28 @@
   * @return {type} {description}
   */
   const predictGender = (str) => {
-    // no string = crud output
-    if (str == null) return 'unable to determine gender'
-
+    // no string return 0
+    if (str == null) return 0
     // if str isn't a string, make it into one
     if (typeof str !== 'string') str = str.toString()
-
     // trim whitespace and convert to lowercase
     str = str.toLowerCase().trim()
-
     // convert our string to tokens
     const tokens = tokenizer(str)
-
     // if there are no tokens return crud
-    if (tokens == null) return 'unable to determine gender'
-
+    if (tokens == null) return 0
     // get matches from array
     const matches = getMatches(tokens)
-
-    // get wordcount
-    const wordcount = tokens.length
-
-    // set intercept value
-    const int = (-0.06724152)
-
     // calculate lexical useage
-    const lex = calcLex(matches, wordcount, int)
-
-    // convert lex value to gender string
-    let gender = 'female'
-    if (lex < 0) gender = 'male'
-
-    // return gender string
+    const lex = calcLex(matches, tokens.length, (-0.06724152))
+    // convert lex value to gender number
+    let gender = 0 // unknown
+    if (lex < 0) {
+      gender = 1 // male
+    } else if (lex > 0) {
+      gender = 2 // female
+    }
+    // return gender
     return gender
   }
 
