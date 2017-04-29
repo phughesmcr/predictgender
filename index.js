@@ -1,6 +1,6 @@
 /**
  * predictGender
- * v0.1.1
+ * v0.1.2
  *
  * Predict the gender of a string's author.
  *
@@ -19,15 +19,13 @@
  *
  * Usage example:
  * const pg = require('predictgender);
+ * const rtn = 'gender' // what to return: 'gender' or 'lex' - lex being the lexical value, gender being 1 (male), 2 (female) or 0 (unknown)
  * const text = "A big long string of text...";
- * let gender = pg(text);
+ * let gender = pg(text, rtn);
  * console.log(gender)
  *
- * Male = 1
- * Female = 2
- * Errors or unknown = 0
- *
  * @param {string} str  {input string}
+ * @param {string} rtn  {'gender' or 'lex'}
  * @return {number} {predicted gender}
  */
 
@@ -118,22 +116,25 @@
     }
     // calculate lexical usage value
     let lex = 0
-    counts.forEach(function (a, b) {
+    let i
+    let len = counts.length
+    for (i = 0; i < len; i++) {
       // (word frequency / total word count) * weight
-      lex += (a / wc) * weights[b]
-    })
+      lex += (counts[i] / wc) * weights[i]
+    }
     // add int
-    lex = lex + int
+    lex += int
     // return final lexical value + intercept
     return lex
   }
 
   /**
   * @function predictGender
-  * @param  {string} str {string input}
-  * @return {type} {description}
+  * @param  {string} str  {string input}
+  * @param  {string} rtn  {what to return, 'gender' or 'lex'}
+  * @return {number} {gender (1, 2, 0) or lexical value based on rtn value}
   */
-  const predictGender = (str) => {
+  const predictGender = (str, rtn) => {
     // no string return 0
     if (str == null) return 0
     // if str isn't a string, make it into one
@@ -142,13 +143,17 @@
     str = str.toLowerCase().trim()
     // convert our string to tokens
     const tokens = tokenizer(str)
-    // if there are no tokens return crud
+    // if there are no tokens return 0
     if (tokens == null) return 0
     // get matches from array
     const matches = getMatches(tokens)
     // calculate lexical useage
     const lex = calcLex(matches, tokens.length, (-0.06724152))
     // convert lex value to gender number
+    if (rtn == null) rtn = 'gender'
+    // return lex if requested
+    if (rtn === 'lex') return lex
+    // else calculate gender value
     let gender = 0 // unknown
     if (lex < 0) {
       gender = 1 // male
