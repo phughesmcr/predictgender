@@ -1,6 +1,6 @@
 /**
  * predictGender
- * v0.1.2
+ * v0.1.3
  *
  * Predict the gender of a string's author.
  *
@@ -19,14 +19,14 @@
  *
  * Usage example:
  * const pg = require('predictgender);
- * const rtn = 'gender' // what to return: 'gender' or 'lex' - lex being the lexical value, gender being 1 (male), 2 (female) or 0 (unknown)
+ * const rtn = 'gender' // what to return: 'gender' or 'lex' - lex being the lexical value, gender being -1 (male), 1 (female) or 0 (unknown)
  * const text = "A big long string of text...";
  * let gender = pg(text, rtn);
  * console.log(gender)
  *
- * @param {string} str  {input string}
- * @param {string} rtn  {'gender' or 'lex'}
- * @return {number} {predicted gender}
+ * @param {string} str  input string
+ * @param {string} rtn  'gender' or 'lex'
+ * @return {number} predicted gender
  */
 
 'use strict'
@@ -48,8 +48,9 @@
 
   // get number of times el appears in an array
   Array.prototype.indexesOf = function (el) {
-    var idxs = []
-    for (var i = this.length - 1; i >= 0; i--) {
+    const idxs = []
+    let i = this.length - 1
+    for (i; i >= 0; i--) {
       if (this[i] === el) {
         idxs.unshift(i)
       }
@@ -59,11 +60,11 @@
 
   /**
   * @function getMatches
-  * @param  {array} arr {token array}
-  * @return {object} {object of matches in their respective categories}
+  * @param  {Array} arr token array
+  * @return {Object}  object of matches in their respective categories
   */
   const getMatches = (arr) => {
-    let matches = {}
+    const matches = {}
     // loop through the lexicon data
     const data = lexicon.GENDER
     let key
@@ -95,14 +96,14 @@
   /**
   * Calculate the lexical value of matched items in object
   * @function calcLex
-  * @param  {object} obj {object of matched items}
-  * @param  {number} wc  {total word count}
-  * @param  {number} int {intercept value}
-  * @return {number} {lexical value}
+  * @param  {Object} obj  object of matched items
+  * @param  {number} wc   total word count
+  * @param  {number} int  intercept value
+  * @return {number}  lexical value
   */
   const calcLex = (obj, wc, int) => {
-    let counts = []   // number of matched objects
-    let weights = []  // weights of matched objects
+    const counts = []   // number of matched objects
+    const weights = []  // weights of matched objects
     // loop through the matches and get the word frequency (counts) and weights
     let key
     for (key in obj) {
@@ -117,26 +118,29 @@
     // calculate lexical usage value
     let lex = 0
     let i
-    let len = counts.length
+    const len = counts.length
+    let words = Number(wc)
     for (i = 0; i < len; i++) {
+      let count = Number(counts[i])
+      let weight = Number(weights[i])
       // (word frequency / total word count) * weight
-      lex += (counts[i] / wc) * weights[i]
+      lex += (count / words) * weight
     }
     // add int
-    lex += int
+    lex += Number(int)
     // return final lexical value + intercept
-    return lex
+    return Number(lex)
   }
 
   /**
   * @function predictGender
-  * @param  {string} str  {string input}
-  * @param  {string} rtn  {what to return, 'gender' or 'lex'}
-  * @return {number} {gender (1, 2, 0) or lexical value based on rtn value}
+  * @param  {string} str  string input
+  * @param  {string} rtn  what to return, 'gender' or 'lex'
+  * @return {number} gender (-1, 0, 1) or lexical value based on rtn value
   */
   const predictGender = (str, rtn) => {
     // no string return 0
-    if (str == null) return 0
+    if (str == null) return null
     // if str isn't a string, make it into one
     if (typeof str !== 'string') str = str.toString()
     // trim whitespace and convert to lowercase
@@ -156,9 +160,9 @@
     // else calculate gender value
     let gender = 0 // unknown
     if (lex < 0) {
-      gender = 1 // male
+      gender = -1 // male
     } else if (lex > 0) {
-      gender = 2 // female
+      gender = 1 // female
     }
     // return gender
     return gender

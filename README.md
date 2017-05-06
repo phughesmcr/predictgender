@@ -2,8 +2,6 @@
 
 Predict the gender of a string's author.
 
-Input a string, get either "male", or "female" in return.
-
 ## Usage
 ```Javascript
 const pg = require('predictgender')
@@ -13,9 +11,9 @@ let gender = pg(text)
 
 ## Output
 ```Javascript
-Male = 1
-Female = 2
-Errors or unknown = 0
+Male = -1
+Female = 1
+Unknown = 0
 ```
 
 ## Acknowledgements
