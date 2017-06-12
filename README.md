@@ -5,16 +5,31 @@ Predict the gender of a string's author.
 ## Usage
 ```Javascript
 const pg = require('predictgender')
+const opts = {
+  'return': 'gender', // Valid options include: 'number', 'lex', or 'gender' (default)
+  'ngrams': true      // include bigrams and trigrams in analysis, not recommended for long strings
+}
 let text = "A long string of text...."
-let gender = pg(text)
+let gender = pg(text, opts)
 ```
 
-## Output
-```Javascript
-Male = -1
-Female = 1
-Unknown = 0
-```
+## Options
+
+### "return"
+
+Valid options include: 'number', 'lex', or 'gender' (default)
+
+Number returns -1 for male, 0 for indeterminate or unknown, and 1 for female.
+
+Lex returns the lexical value, positive values being female, negative being male.
+
+Gender returns a string, "Male", "Female", or "Unknown"
+
+### 'ngrams'
+
+Boolean. Indicates whether or not to include bigrams and trigrams.
+
+It is recommended you set this to false for very long strings.
 
 ## Acknowledgements
 
