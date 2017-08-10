@@ -1,6 +1,6 @@
 /**
  * predictGender
- * v0.2.1
+ * v0.2.2
  *
  * Predict the gender of a string's author.
  *
@@ -50,11 +50,11 @@
   }
 
   // get number of times el appears in an array
-  Array.prototype.indexesOf = function (el) {
+  function indexesOf(arr, el) {
     const idxs = []
-    let i = this.length - 1
+    let i = arr.length - 1
     for (i; i >= 0; i--) {
-      if (this[i] === el) {
+      if (arr[i] === el) {
         idxs.unshift(i)
       }
     }
@@ -118,7 +118,7 @@
         if (arr.indexOf(word) > -1) {
           let item
           let weight = data[word]
-          let reps = arr.indexesOf(word).length // number of times the word appears in the input text
+          let reps = indexesOf(arr, word).length // number of times the word appears in the input text
           if (reps > 1) { // if the word appears more than once, group all appearances in one array
             let words = []
             for (let i = 0; i < reps; i++) {
@@ -126,7 +126,7 @@
             }
             item = [words, weight]  // i.e. [[word, word, word], weight]
           } else {
-            item = [word, weight]    // i.e. [word, weight]
+            item = [word, weight]   // i.e. [word, weight]
           }
           match.push(item)
         }
