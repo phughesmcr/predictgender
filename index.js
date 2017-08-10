@@ -1,6 +1,6 @@
 /**
  * predictGender
- * v0.2.2
+ * v0.3.0
  *
  * Predict the gender of a string's author.
  *
@@ -8,7 +8,11 @@
  * https://github.com/phugh/predictGender
  *
  * Based on this paper:
- * Schwartz, H. A., Eichstaedt, J. C., Kern, M. L., Dziurzynski, L., Ramones, S. M., Agrawal, M., Shah, A., Kosinski, M., Stillwell, D., Seligman, M. E., & Ungar, L. H. (2013). Personality, gender, and age in the language of social media: The Open-Vocabulary Approach. PLOS ONE, 8(9), . . e73791.
+ * Schwartz, H. A., Eichstaedt, J. C., Kern, M. L., Dziurzynski, L.,
+ * Ramones, S. M., Agrawal, M., Shah, A., Kosinski, M., Stillwell,
+ * D., Seligman, M. E., & Ungar, L. H. (2013).
+ * Personality, gender, and age in the language of social media:
+ * The Open-Vocabulary Approach. PLOS ONE, 8(9), . . e73791.
  *
  * Using the gender lexicon data from http://www.wwbp.org/lexica.html
  * Used under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported licence
@@ -20,11 +24,16 @@
  * Usage example:
  * const pg = require('predictgender);
  * const opts = {
- *  'return': 'gender', // return 'gender' (default) as a string, e.g. "Male" or return 'lex' the lexical value, or 'number' -1 = male, 0 = indeterminate, 1 = female
- *  'ngrams': true      // include bigrams and trigrams in analysis, not recommended for long strings
+ *  'return': 'gender', // return: 'gender' (default) returns the gender as a
+ *                          string, e.g. "Male". Or return: 'lex', returns the
+ *                          lexical value. Or return: 'number', returns the
+ *                          gender as a number, i,e, -1 = male,
+ *                          0 = indeterminate, 1 = female.
+ *  'ngrams': true      // include bigrams and trigrams in analysis,
+ *                          not recommended for long strings
  * }
- * const text = "A big long string of text...";
- * const gender = pg(text, opts);
+ * const str = "A big long string of text...";
+ * const gender = pg(str, opts);
  * console.log(gender)
  *
  * @param {string} str  input string
@@ -50,7 +59,7 @@
   }
 
   // get number of times el appears in an array
-  function indexesOf(arr, el) {
+  function indexesOf (arr, el) {
     const idxs = []
     let i = arr.length - 1
     for (i; i >= 0; i--) {
@@ -62,35 +71,22 @@
   }
 
   /**
-  * Get all the bigrams of a string and return as an array
-  * @function getBigrams
-  * @param  {string} str input string
-  * @return {Array} array of bigram strings
+  * Get all the n-grams of a string and return as an array
+  * @function getNGrams
+  * @param {string} str input string
+  * @param {number} n abitrary n-gram number, e.g. 2 = bigrams
+  * @return {Array} array of ngram strings
   */
-  const getBigrams = str => {
-    const bigrams = natural.NGrams.bigrams(str)
-    const len = bigrams.length
+  const getNGrams = (str, n) => {
+    // default to bi-grams on null n
+    if (n == null) n = 2
+    if (typeof n !== 'number') n = Number(n)
+    const ngrams = natural.NGrams.ngrams(str, n)
+    const len = ngrams.length
     const result = []
     let i = 0
     for (i; i < len; i++) {
-      result.push(bigrams[i].join(' '))
-    }
-    return result
-  }
-
-  /**
-  * Get all the trigrams of a string and return as an array
-  * @function getTrigrams
-  * @param  {string} str input string
-  * @return {Array} array of trigram strings
-  */
-  const getTrigrams = str => {
-    const trigrams = natural.NGrams.trigrams(str)
-    const len = trigrams.length
-    const result = []
-    let i = 0
-    for (i; i < len; i++) {
-      result.push(trigrams[i].join(' '))
+      result.push(ngrams[i].join(' '))
     }
     return result
   }
@@ -98,8 +94,8 @@
   /**
   * Match an array against a lexicon object
   * @function getMatches
-  * @param  {Array} arr token array
-  * @param  {Object} lexicon lexicon object
+  * @param {Array} arr token array
+  * @param {Object} lexicon lexicon object
   * @return {Object} object of matches
   */
   const getMatches = (arr, lexicon) => {
@@ -148,9 +144,8 @@
   const calcLex = (obj, wc, int) => {
     const counts = []   // number of matched objects
     const weights = []  // weights of matched objects
-    // loop through the matches and get the word frequency (counts) and weights
     let word
-    for (word in obj) {
+    for (word in obj) { // loop through the matches and get the word frequency (counts) and weights
       if (!obj.hasOwnProperty(word)) continue
       if (Array.isArray(obj[word][0])) {  // if the first item in the match is an array, the item is a duplicate
         counts.push(obj[word][0].length)  // state the number of times the duplicate item appears
@@ -175,8 +170,8 @@
 
   /**
   * @function predictGender
-  * @param  {string} str  string input
-  * @param  {Object} opts options object
+  * @param {string} str string input
+  * @param {Object} opts options object
   * @return {number||string}
   */
   const predictGender = (str, opts) => {
@@ -203,8 +198,8 @@
     const wordcount = tokens.length
     // handle bigrams and trigrams if wanted
     if (opts.ngrams) {
-      const bigrams = getBigrams(str)
-      const trigrams = getTrigrams(str)
+      const bigrams = getNGrams(str, 2)
+      const trigrams = getNGrams(str, 3)
       tokens = tokens.concat(bigrams, trigrams)
     }
     // get matches from array
@@ -214,7 +209,7 @@
     // return lex if requested
     if (opts.return === 'lex') return lex
     // else calculate gender value
-    let gender = 0 // unknown
+    let gender = 0 // 0 = unknown
     if (lex < 0) {
       // Male
       output === 'gender' ? gender = 'Male' : gender = -1
