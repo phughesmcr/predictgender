@@ -1,6 +1,6 @@
 /**
  * predictGender
- * v0.3.0
+ * v0.4.0
  *
  * Predict the gender of a string's author.
  *
@@ -23,22 +23,18 @@
  *
  * Usage example:
  * const pg = require('predictgender);
- * const opts = {
- *  'return': 'gender', // return: 'gender' (default) returns the gender as a
+ * const ret = 'gender'  // return: 'gender' (default) returns the gender as a
  *                          string, e.g. "Male". Or return: 'lex', returns the
  *                          lexical value. Or return: 'number', returns the
  *                          gender as a number, i,e, -1 = male,
  *                          0 = indeterminate, 1 = female.
- *  'ngrams': true      // include bigrams and trigrams in analysis,
- *                          not recommended for long strings
- * }
  * const str = "A big long string of text...";
- * const gender = pg(str, opts);
+ * const gender = pg(str, ret);
  * console.log(gender)
  *
- * @param {string} str  input string
- * @param {Object} opts options object
- * @return {string||number} predicted gender
+ * @param {string} str input string
+ * @param {string} ret what to return
+ * @return {(string||number)} predicted gender
  */
 
 'use strict'
@@ -47,22 +43,28 @@
   const previous = root.predictGender
 
   let lexicon = root.lexicon
-  let natural = root.natural
+  let simplengrams = root.simplengrams
   let tokenizer = root.tokenizer
 
   if (typeof lexicon === 'undefined') {
     if (typeof require !== 'undefined') {
       lexicon = require('./data/lexicon.json')
-      natural = require('natural')
+      simplengrams = require('simplengrams')
       tokenizer = require('happynodetokenizer')
-    } else throw new Error('predictGender requires node modules happynodetokenizer and natural, and ./data/lexicon.json')
+    } else throw new Error('predictGender requires happynodetokenizer and simplengrams, and ./data/lexicon.json')
   }
 
-  // get number of times el appears in an array
-  function indexesOf (arr, el) {
+  /**
+   * Get the indexes of duplicate elements in an array
+   * @function indexesOf
+   * @param  {Array} arr input array
+   * @param  {string} el element to test against
+   * @return {Array} array of indexes
+   */
+  const indexesOf = (arr, el) => {
     const idxs = []
-    let i = arr.length - 1
-    for (i; i >= 0; i--) {
+    let i = arr.length
+    while (i--) {
       if (arr[i] === el) {
         idxs.unshift(i)
       }
@@ -71,22 +73,17 @@
   }
 
   /**
-  * Get all the n-grams of a string and return as an array
-  * @function getNGrams
-  * @param {string} str input string
-  * @param {number} n abitrary n-gram number, e.g. 2 = bigrams
-  * @return {Array} array of ngram strings
-  */
-  const getNGrams = (str, n) => {
-    // default to bi-grams on null n
-    if (n == null) n = 2
-    if (typeof n !== 'number') n = Number(n)
-    const ngrams = natural.NGrams.ngrams(str, n)
-    const len = ngrams.length
-    const result = []
+   * Combines multidimensional array elements into strings
+   * @function arr2string
+   * @param  {Array} arr input array
+   * @return {Array} output array
+   */
+  const arr2string = arr => {
     let i = 0
+    const len = arr.length
+    const result = []
     for (i; i < len; i++) {
-      result.push(ngrams[i].join(' '))
+      result.push(arr[i].join(' '))
     }
     return result
   }
@@ -171,10 +168,10 @@
   /**
   * @function predictGender
   * @param {string} str string input
-  * @param {Object} opts options object
-  * @return {number||string}
+  * @param {string} ret what to return
+  * @return {(string||number)}
   */
-  const predictGender = (str, opts) => {
+  const predictGender = (str, ret) => {
     // no string return 0
     if (str == null) return null
     // if str isn't a string, make it into one
@@ -182,41 +179,37 @@
     // trim whitespace and convert to lowercase
     str = str.toLowerCase().trim()
     // options defaults
-    if (opts == null) {
-      opts = {
-        'return': 'gender',
-        'ngrams': true
-      }
-    }
-    opts.return = opts.return || 'gender'
-    const output = opts.return
+    ret = ret || 'gender'
     // convert our string to tokens
     let tokens = tokenizer(str)
     // if there are no tokens return unknown or 0
-    if (tokens == null) return output === 'gender' ? 'Unknown' : 0
+    if (tokens == null) return ret === 'gender' ? 'Unknown' : 0
     // get wordcount before we add ngrams
     const wordcount = tokens.length
-    // handle bigrams and trigrams if wanted
-    if (opts.ngrams) {
-      const bigrams = getNGrams(str, 2)
-      const trigrams = getNGrams(str, 3)
-      tokens = tokens.concat(bigrams, trigrams)
+    // get n-grams
+    const ngrams = []
+    ngrams.push(arr2string(simplengrams(str, 2)))
+    ngrams.push(arr2string(simplengrams(str, 3)))
+    const nLen = ngrams.length
+    let i = 0
+    for (i; i < nLen; i++) {
+      tokens = tokens.concat(ngrams[i])
     }
     // get matches from array
     const matches = getMatches(tokens, lexicon)
     // calculate lexical useage
     const lex = calcLex(matches.GENDER, wordcount, (-0.06724152))
     // return lex if requested
-    if (opts.return === 'lex') return lex
+    if (ret === 'lex') return lex
     // else calculate gender value
     let gender = 0 // 0 = unknown
     if (lex < 0) {
       // Male
-      output === 'gender' ? gender = 'Male' : gender = -1
+      ret === 'gender' ? gender = 'Male' : gender = -1
     } else if (lex > 0) {
-      output === 'gender' ? gender = 'Female' : gender = 1
+      ret === 'gender' ? gender = 'Female' : gender = 1
     } else {
-      output === 'gender' ? gender = 'Unknown' : gender = 0
+      ret === 'gender' ? gender = 'Unknown' : gender = 0
     }
     // return gender
     return gender
