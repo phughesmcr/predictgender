@@ -1,6 +1,6 @@
 /**
  * predictGender
- * v0.4.0
+ * v0.5.0
  *
  * Predict the gender of a string's author.
  *
@@ -23,17 +23,29 @@
  *
  * Usage example:
  * const pg = require('predictgender);
- * const ret = 'gender'  // return: 'gender' (default) returns the gender as a
+ * const opts = {
+ *    'ret': 'gender',  // return: 'gender' (default) returns the gender as a
  *                          string, e.g. "Male". Or return: 'lex', returns the
  *                          lexical value. Or return: 'number', returns the
  *                          gender as a number, i,e, -1 = male,
  *                          0 = indeterminate, 1 = female.
+ *    'nGrams': true,   // boolean - include bigrams / trigrams (true - default)
+ *    'wcGrams': false, // boolean - take word count before (false - default) or
+ *                          after (true) n-Grams have been added
+ *    'sortBy': 'lex' // if ret = 'matches', sortBy can be used to sort the
+ *                          returned matches array. Acceptable options are
+ *                          'total' sorts array by total weight
+ *                          (i.e. use frequency * weight), 'weight' sorts by
+ *                          singular weight, 'freq' sorts by word frequency, or
+ *                          'lex' (default) sorts by final lexical value
+ *                          (i.e. (word freq / word count) * weight)
+ * }
  * const str = "A big long string of text...";
- * const gender = pg(str, ret);
+ * const gender = pg(str, opts);
  * console.log(gender)
  *
  * @param {string} str input string
- * @param {string} ret what to return
+ * @param {Object} opts options object
  * @return {(string||number)} predicted gender
  */
 
@@ -89,6 +101,47 @@
   }
 
   /**
+   * Sort and return an array by column
+   * @function sortByUse
+   * @param  {Array} arr input array
+   * @param  {string} by  what to sort by
+   * @return {Array}
+   */
+  const sortByUse = (arr, by) => {
+    let x = 4 // default to sort by lexical value
+    if (by === 'total') {
+      x = 3
+    } else if (by === 'weight') {
+      x = 2
+    } else if (by === 'freq') {
+      x = 1
+    }
+    const sorter = (a, b) => {
+      return a[x] - b[x]
+    }
+    return arr.sort(sorter)
+  }
+
+  /**
+   * Prepare an object to be sorted by sortByUse
+   * @function prepareMatches
+   * @param  {Object} obj input object
+   * @param  {string} by  string
+   * @param  {number} wc  word count
+   * @return {Array} sorted array
+   */
+  const prepareMatches = (obj, by, wc) => {
+    let matches = []
+    for (let word in obj) {
+      if (!obj.hasOwnProperty(word)) continue
+      let total = Number(obj[word][1]) * Number(obj[word][2])
+      let lex = (Number(obj[word][1]) / wc) * Number(obj[word][2])
+      matches.push([obj[word][0], obj[word][1], obj[word][2], total, lex])
+    }
+    return sortByUse(matches, by)
+  }
+
+  /**
   * Match an array against a lexicon object
   * @function getMatches
   * @param {Array} arr token array
@@ -109,18 +162,9 @@
         if (!data.hasOwnProperty(word)) continue
         // if word from input matches word from lexicon ...
         if (arr.indexOf(word) > -1) {
-          let item
           let weight = data[word]
           let reps = indexesOf(arr, word).length // number of times the word appears in the input text
-          if (reps > 1) { // if the word appears more than once, group all appearances in one array
-            let words = []
-            for (let i = 0; i < reps; i++) {
-              words.push(word)
-            }
-            item = [words, weight]  // i.e. [[word, word, word], weight]
-          } else {
-            item = [word, weight]   // i.e. [word, weight]
-          }
+          let item = [word, reps, weight]
           match.push(item)
         }
       }
@@ -139,25 +183,12 @@
   * @return {number} lexical value
   */
   const calcLex = (obj, wc, int) => {
-    const counts = []   // number of matched objects
-    const weights = []  // weights of matched objects
     let word
-    for (word in obj) { // loop through the matches and get the word frequency (counts) and weights
-      if (!obj.hasOwnProperty(word)) continue
-      if (Array.isArray(obj[word][0])) {  // if the first item in the match is an array, the item is a duplicate
-        counts.push(obj[word][0].length)  // state the number of times the duplicate item appears
-      } else {
-        counts.push(1)                    // for non-duplicates, the word obviously only appears 1 time
-      }
-      weights.push(obj[word][1])          // corresponding weight
-    }
-    // calculate lexical usage value
     let lex = 0
-    let i = 0
-    const len = counts.length
-    for (i; i < len; i++) {
+    for (word in obj) {
+      if (!obj.hasOwnProperty(word)) continue
       // (word frequency / total wordcount) * weight
-      lex += (Number(counts[i]) / wc) * Number(weights[i])
+      lex += (Number(obj[word][1]) / wc) * Number(obj[word][2])
     }
     // add intercept value
     lex += int
@@ -168,10 +199,10 @@
   /**
   * @function predictGender
   * @param {string} str string input
-  * @param {string} ret what to return
+  * @param {Object} opts options object
   * @return {(string||number)}
   */
-  const predictGender = (str, ret) => {
+  const predictGender = (str, opts) => {
     // no string return 0
     if (str == null) return null
     // if str isn't a string, make it into one
@@ -179,24 +210,41 @@
     // trim whitespace and convert to lowercase
     str = str.toLowerCase().trim()
     // options defaults
-    ret = ret || 'gender'
+    if (opts == null) {
+      opts = {
+        'ret': 'gender',
+        'nGrams': true,
+        'wcGrams': false,
+        'sortBy': 'total'
+      }
+    }
+    opts.ret = opts.ret || 'gender'
+    opts.sortBy = opts.sortBy || 'total'
+    opts.wcGrams = opts.wcGrams || false
+    const ret = opts.ret
     // convert our string to tokens
     let tokens = tokenizer(str)
     // if there are no tokens return unknown or 0
     if (tokens == null) return ret === 'gender' ? 'Unknown' : 0
     // get wordcount before we add ngrams
-    const wordcount = tokens.length
+    let wordcount = tokens.length
     // get n-grams
-    const ngrams = []
-    ngrams.push(arr2string(simplengrams(str, 2)))
-    ngrams.push(arr2string(simplengrams(str, 3)))
-    const nLen = ngrams.length
-    let i = 0
-    for (i; i < nLen; i++) {
-      tokens = tokens.concat(ngrams[i])
+    if (opts.nGrams) {
+      const ngrams = []
+      ngrams.push(arr2string(simplengrams(str, 2)))
+      ngrams.push(arr2string(simplengrams(str, 3)))
+      const nLen = ngrams.length
+      let i = 0
+      for (i; i < nLen; i++) {
+        tokens = tokens.concat(ngrams[i])
+      }
     }
+    // recalculate wordcount if wcGrams is true
+    if (opts.wcGrams) wordcount = tokens.length
     // get matches from array
     const matches = getMatches(tokens, lexicon)
+    // return match object if requested
+    if (ret === 'matches') return prepareMatches(matches.GENDER, opts.sortBy, wordcount)
     // calculate lexical useage
     const lex = calcLex(matches.GENDER, wordcount, (-0.06724152))
     // return lex if requested
@@ -204,7 +252,6 @@
     // else calculate gender value
     let gender = 0 // 0 = unknown
     if (lex < 0) {
-      // Male
       ret === 'gender' ? gender = 'Male' : gender = -1
     } else if (lex > 0) {
       ret === 'gender' ? gender = 'Female' : gender = 1
