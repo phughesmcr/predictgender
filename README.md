@@ -6,23 +6,25 @@ Predict the gender of a string's author.
 ```Javascript
 const pg = require('predictgender')
 const opts = {
-    'ret': 'gender',  // return: 'gender' (default) returns the gender as a
+  'ret': 'gender',  // return: 'gender' (default) returns the gender as a
                           string, e.g. "Male". Or return: 'lex', returns the
                           lexical value. Or return: 'number', returns the
                           gender as a number, i,e, -1 = male,
                           0 = indeterminate, 1 = female.
-   'nGrams': true,   // boolean - include bigrams / trigrams (true - default)
-   'wcGrams': false, // boolean - take word count before (false - default) or
+  'nGrams': true,   // boolean - include bigrams / trigrams (true - default)
+  'wcGrams': false, // boolean - take word count before (false - default) or
                           after (true) n-Grams have been added
-   'sortBy': 'lex'   // if ret = 'matches', sortBy can be used to sort the
+  'sortBy': 'lex'   // if ret = 'matches', sortBy can be used to sort the
                           returned matches array. Acceptable options are
                           'total' sorts array by total weight
                           (i.e. use frequency * weight), 'weight' sorts by
                           singular weight, 'freq' sorts by word frequency, or
                           'lex' (default) sorts by final lexical value
                           (i.e. (word freq / word count) * weight)
+  'places': 10,     // number of decimal places to return values at, 10 is default
+  'maxThresh': 3.5, // upper threshold - exclude words with weights above this.
+  'minThresh': -0.3 // lower threshold - exclude words with weights below this.
 }
-const ret = 'gender' // Valid options include: 'number', 'lex', or 'gender' (default)
 const text = "A long string of text...."
 const gender = pg(text, opts)
 ```
@@ -61,13 +63,23 @@ When set to true, the output from the nGrams option will be added to the word co
 
 If 'ret' = 'matches', this option can be used to control how the outputted array is sorted.
 
-'total' sorts by total weight, i.e. word weight * word frequency
-
 'weight' sorts by the words initial weight
 
 'freq' sorts by word frequency
 
 'lex' sorts by final lexical value, i.e. (word frequency * word count) / word weight
+
+### places
+
+**Number**
+
+Number of decimal places to limit outputted values to
+
+### maxThresh and minThresh
+
+**Float**
+
+Exclude words that have weights above or below these thresholds.
 
 ## 'ret': 'matches' output example
 
@@ -89,8 +101,6 @@ By default the matches output array is sorted ascending by lexical value.
 | 'note'        | 3         | -34.83417005  | -104.50251014 | -0.7572645663043478 |
 | 'america'     | 2         | -49.21227355  | -98.4245471   | -0.7132213557971014 |
 | 'republic'    | 1         | -75.5720402   | -75.5720402   | -0.5476234797101449 |
-
-
 
 ## Acknowledgements
 

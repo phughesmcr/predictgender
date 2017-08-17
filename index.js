@@ -1,6 +1,6 @@
 /**
  * predictGender
- * v0.5.0
+ * v0.5.1
  *
  * Predict the gender of a string's author.
  *
@@ -32,13 +32,14 @@
  *    'nGrams': true,   // boolean - include bigrams / trigrams (true - default)
  *    'wcGrams': false, // boolean - take word count before (false - default) or
  *                          after (true) n-Grams have been added
- *    'sortBy': 'lex' // if ret = 'matches', sortBy can be used to sort the
+ *    'sortBy': 'lex',  // if ret = 'matches', sortBy can be used to sort the
  *                          returned matches array. Acceptable options are
- *                          'total' sorts array by total weight
- *                          (i.e. use frequency * weight), 'weight' sorts by
- *                          singular weight, 'freq' sorts by word frequency, or
- *                          'lex' (default) sorts by final lexical value
- *                          (i.e. (word freq / word count) * weight)
+ *                          'weight' sorts by singular weight, 'freq' sorts by
+ *                          word frequency, or 'lex' (default) sorts by final
+ *                          lexical value (i.e. (word freq / word count) * weight)
+ *    'places': 7,      // number of decimal places to return values at, 7 is default
+ *    'maxThresh': 3.5, // upper threshold - exclude words with weights above this.
+ *    'minThresh': -0.3 // lower threshold - exclude words with weights below this.
  * }
  * const str = "A big long string of text...";
  * const gender = pg(str, opts);
@@ -46,7 +47,7 @@
  *
  * @param {string} str input string
  * @param {Object} opts options object
- * @return {(string||number)} predicted gender
+ * @return {(string|number)} predicted gender
  */
 
 'use strict'
@@ -108,10 +109,8 @@
    * @return {Array}
    */
   const sortByUse = (arr, by) => {
-    let x = 4 // default to sort by lexical value
-    if (by === 'total') {
-      x = 3
-    } else if (by === 'weight') {
+    let x = 3 // default to sort by lexical value
+    if (by === 'weight') {
       x = 2
     } else if (by === 'freq') {
       x = 1
@@ -128,15 +127,16 @@
    * @param  {Object} obj input object
    * @param  {string} by  string
    * @param  {number} wc  word count
+   * @param  {number} places  decimal places
    * @return {Array} sorted array
    */
-  const prepareMatches = (obj, by, wc) => {
+  const prepareMatches = (obj, by, wc, places) => {
     let matches = []
     for (let word in obj) {
       if (!obj.hasOwnProperty(word)) continue
-      let total = Number(obj[word][1]) * Number(obj[word][2])
       let lex = (Number(obj[word][1]) / wc) * Number(obj[word][2])
-      matches.push([obj[word][0], obj[word][1], obj[word][2], total, lex])
+      lex = Number(lex.toFixed(places))
+      matches.push([obj[word][0], obj[word][1], obj[word][2], lex])
     }
     return sortByUse(matches, by)
   }
@@ -146,9 +146,12 @@
   * @function getMatches
   * @param {Array} arr token array
   * @param {Object} lexicon lexicon object
+  * @param {number} places decimal places
+  * @param {number} min minimum weight threshold
+  * @param {number} max maximum weight threshold
   * @return {Object} object of matches
   */
-  const getMatches = (arr, lexicon) => {
+  const getMatches = (arr, lexicon, places, min, max) => {
     const matches = {}
     // loop through the lexicon categories
     let category
@@ -162,10 +165,12 @@
         if (!data.hasOwnProperty(word)) continue
         // if word from input matches word from lexicon ...
         if (arr.indexOf(word) > -1) {
-          let weight = data[word]
-          let reps = indexesOf(arr, word).length // number of times the word appears in the input text
-          let item = [word, reps, weight]
-          match.push(item)
+          let weight = Number((data[word]).toFixed(places))
+          if (weight < max && weight > min) {
+            let reps = indexesOf(arr, word).length // number of times the word appears in the input text
+            let item = [word, reps, weight]
+            match.push(item)
+          }
         }
       }
       matches[category] = match
@@ -180,9 +185,10 @@
   * @param {Object} obj matches object
   * @param {number} wc wordcount
   * @param {number} int intercept value
+  * @param {number} places decimal places
   * @return {number} lexical value
   */
-  const calcLex = (obj, wc, int) => {
+  const calcLex = (obj, wc, int, places) => {
     let word
     let lex = 0
     for (word in obj) {
@@ -193,17 +199,17 @@
     // add intercept value
     lex += int
     // return final lexical value
-    return lex
+    return Number(lex.toFixed(places))
   }
 
   /**
   * @function predictGender
   * @param {string} str string input
   * @param {Object} opts options object
-  * @return {(string||number)}
+  * @return {(string|number)}
   */
   const predictGender = (str, opts) => {
-    // no string return 0
+    // no string return null
     if (str == null) return null
     // if str isn't a string, make it into one
     if (typeof str !== 'string') str = str.toString()
@@ -215,13 +221,20 @@
         'ret': 'gender',
         'nGrams': true,
         'wcGrams': false,
-        'sortBy': 'total'
+        'sortBy': 'total',
+        'places': 5,
+        'maxThresh': 99,
+        'minThresh': -99
       }
     }
     opts.ret = opts.ret || 'gender'
     opts.sortBy = opts.sortBy || 'total'
     opts.wcGrams = opts.wcGrams || false
+    opts.places = opts.places || 10
+    opts.maxThresh = opts.maxThresh || 99
+    opts.minThresh = opts.minThresh || -99
     const ret = opts.ret
+    const places = opts.places
     // convert our string to tokens
     let tokens = tokenizer(str)
     // if there are no tokens return unknown or 0
@@ -242,11 +255,11 @@
     // recalculate wordcount if wcGrams is true
     if (opts.wcGrams) wordcount = tokens.length
     // get matches from array
-    const matches = getMatches(tokens, lexicon)
+    const matches = getMatches(tokens, lexicon, places, opts.minThresh, opts.maxThresh)
     // return match object if requested
-    if (ret === 'matches') return prepareMatches(matches.GENDER, opts.sortBy, wordcount)
+    if (ret === 'matches') return prepareMatches(matches.GENDER, opts.sortBy, wordcount, places)
     // calculate lexical useage
-    const lex = calcLex(matches.GENDER, wordcount, (-0.06724152))
+    const lex = calcLex(matches.GENDER, wordcount, (-0.06724152), places)
     // return lex if requested
     if (ret === 'lex') return lex
     // else calculate gender value

@@ -1,6 +1,6 @@
 {
   "name": "predictgender",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Predict the gender of a string's author",
   "main": "index.js",
   "dependencies": {
