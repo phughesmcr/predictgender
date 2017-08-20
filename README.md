@@ -6,34 +6,33 @@ Predict the gender of a string's author.
 ```Javascript
 const pg = require('predictgender')
 const opts = {
-  'ret': 'gender',  // return: 'gender' (default) returns the gender as a
-                          string, e.g. "Male". Or return: 'lex', returns the
-                          lexical value. Or return: 'number', returns the
+  'output': 'gender' /* 'gender' (default) returns the gender as a
+                          string, e.g. "Male". 'lex', returns the
+                          lexical value. 'number', returns the
                           gender as a number, i,e, -1 = male,
-                          0 = indeterminate, 1 = female.
-  'nGrams': true,   // boolean - include bigrams / trigrams (true - default)
-  'wcGrams': false, // boolean - take word count before (false - default) or
-                          after (true) n-Grams have been added
-  'sortBy': 'lex'   // if ret = 'matches', sortBy can be used to sort the
+                          0 = indeterminate, 1 = female. */
+  'nGrams': true,    // include bigrams / trigrams (true - default).
+  'wcGrams': false,  /* take word count before (false - default) or
+                          after (true) n-Grams have been added. */
+  'sortBy': 'lex',   /* if output = 'matches', sortBy can be used to sort the
                           returned matches array. Acceptable options are
-                          'total' sorts array by total weight
-                          (i.e. use frequency * weight), 'weight' sorts by
-                          singular weight, 'freq' sorts by word frequency, or
-                          'lex' (default) sorts by final lexical value
-                          (i.e. (word freq / word count) * weight)
-  'places': 10,     // number of decimal places to return values at, 10 is default
-  'maxThresh': 3.5, // upper threshold - exclude words with weights above this.
-  'minThresh': -0.3 // lower threshold - exclude words with weights below this.
+                          'weight' sorts by singular weight, 'freq' sorts by
+                          word frequency, or 'lex' (default) sorts by final
+                          lexical value ((word freq / word count) * weight). */
+  'places': 7,       // number of decimal places to return values to.
+  'max': 3.5,        // exclude words with weights above this threshold.
+  'min': -0.3        // exclude words with weights below this threshold.
 }
-const text = "A long string of text...."
+const text = 'A long string of text....'
 const gender = pg(text, opts)
+console.log(gender)
 ```
 
 ## Options
 
 A number of options are provided to allow you to tailor the output to your needs. However, for general use it is recommended that all options are left to their defaults.
 
-### "ret"
+### "output"
 
 **String - Valid options: 'matches', 'number', 'lex', or 'gender' (default)**
 
@@ -75,32 +74,32 @@ If 'ret' = 'matches', this option can be used to control how the outputted array
 
 Number of decimal places to limit outputted values to
 
-### maxThresh and minThresh
+### max and min
 
 **Float**
 
 Exclude words that have weights above or below these thresholds.
 
-## 'ret': 'matches' output example
+## "output": "matches" output example
 
-```JSON
-[ 
-  [ 'magnificent', 1, -192.0206116, -192.0206116, -1.3914537072463768 ],
-  [ 'capital', 1, -133.9311307, -133.9311307, -0.9705154398550726 ],
-  [ 'note', 3, -34.83417005, -104.50251014999999, -0.7572645663043478 ],
-  [ 'america', 2, -49.21227355, -98.4245471, -0.7132213557971014 ],
-  [ 'republic', 1, -75.5720402, -75.5720402, -0.5476234797101449 ]
+```javascript
+[
+  [ 'magnificent', 1, -192.0206116, -1.3914537072463768 ],
+  [ 'capital', 1, -133.9311307, -0.9705154398550726 ],
+  [ 'note', 3, -34.83417005, -0.7572645663043478 ],
+  [ 'america', 2, -49.21227355, -0.7132213557971014 ],
+  [ 'republic', 1, -75.5720402, -0.5476234797101449 ]
 ]
 ```
 By default the matches output array is sorted ascending by lexical value.
 
-| Word          | Frequency | Weight        | Total Weight  | Lexical Val.        |
-| ------------- | --------- | ------------- | ------------- | ------------------- |
-| 'magnificent' | 1         | -192.0206116  | -192.0206116  | -1.3914537072463768 |
-| 'capital'     | 1         | -133.9311307  | -133.9311307  | -0.9705154398550726 |
-| 'note'        | 3         | -34.83417005  | -104.50251014 | -0.7572645663043478 |
-| 'america'     | 2         | -49.21227355  | -98.4245471   | -0.7132213557971014 |
-| 'republic'    | 1         | -75.5720402   | -75.5720402   | -0.5476234797101449 |
+| Word          | Frequency | Weight        | Lexical Val.        |
+| ------------- | --------- | ------------- | ------------------- |
+| 'magnificent' | 1         | -192.0206116  | -1.3914537072463768 |
+| 'capital'     | 1         | -133.9311307  | -0.9705154398550726 |
+| 'note'        | 3         | -34.83417005  | -0.7572645663043478 |
+| 'america'     | 2         | -49.21227355  | -0.7132213557971014 |
+| 'republic'    | 1         | -75.5720402   | -0.5476234797101449 |
 
 ## Acknowledgements
 

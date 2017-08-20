@@ -1,11 +1,11 @@
 {
   "name": "predictgender",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "Predict the gender of a string's author",
   "main": "index.js",
   "dependencies": {
-    "happynodetokenizer": "^0.1.2",
-    "simplengrams": "^0.0.3"
+    "happynodetokenizer": "^0.2.0",
+    "simplengrams": "^0.1.0"
   },
   "keywords": [
     "psychology",
