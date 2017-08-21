@@ -7,10 +7,12 @@ Predict the gender of a string's author.
 const pg = require('predictgender')
 const opts = {
   'output': 'gender' /* 'gender' (default) returns the gender as a
-                          string, e.g. "Male". 'lex', returns the
-                          lexical value. 'number', returns the
-                          gender as a number, i,e, -1 = male,
-                          0 = indeterminate, 1 = female. */
+                          string, e.g. "Male".
+                          'lex' returns the lexical value.
+                          'number', returns the gender as a number,
+                          i,e, -1 = male, 0 = indeterminate, 1 = female.
+                          'matches' returns an array of matched words,
+                          see below. */
   'nGrams': true,    // include bigrams / trigrams (true - default).
   'wcGrams': false,  /* take word count before (false - default) or
                           after (true) n-Grams have been added. */
@@ -36,7 +38,7 @@ A number of options are provided to allow you to tailor the output to your needs
 
 **String - Valid options: 'matches', 'number', 'lex', or 'gender' (default)**
 
-'matches' returns an array of matched words along with the number of times each word appears, its weight, its total weight (weight * appearances), and its final lexical value (i.e. (appearances / word count) * weight). See the output section below for an example.
+'matches' returns an array of matched words along with the number of times each word appears, its weight, and its final lexical value (i.e. (appearances / word count) * weight). See the output section below for an example.
 
 'number' returns -1 for male, 0 for indeterminate or unknown, and 1 for female.
 
@@ -58,9 +60,9 @@ When set to true, the output from the nGrams option will be added to the word co
 
 ### sortBy
 
-**String - valid options: 'total', 'weight', 'freq', 'lex' (default)**
+**String - valid options: 'weight', 'freq', 'lex' (default)**
 
-If 'ret' = 'matches', this option can be used to control how the outputted array is sorted.
+If 'output' = 'matches', this option can be used to control how the outputted array is sorted.
 
 'weight' sorts by the words initial weight
 
