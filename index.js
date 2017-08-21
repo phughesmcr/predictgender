@@ -1,6 +1,6 @@
 /**
  * predictGender
- * v0.6.0
+ * v0.6.1
  *
  * Predict the gender of a string's author.
  *
@@ -215,20 +215,20 @@
         'output': 'gender',
         'nGrams': true,
         'wcGrams': false,
-        'sortBy': 'total',
-        'places': 5,
+        'sortBy': 'lex',
+        'places': 7,
         'max': 99,
         'min': -99,
       };
     }
     opts.output = opts.output || 'gender';
-    opts.sortBy = opts.sortBy || 'total';
+    opts.sortBy = opts.sortBy || 'lex';
     opts.nGrams = opts.nGrams || true;
     opts.wcGrams = opts.wcGrams || false;
-    opts.places = opts.places || 10;
+    opts.places = opts.places || 7;
     opts.max = opts.max || 99;
     opts.min = opts.min || -99;
-    const output = opts.output;
+    let output = opts.output;
     const places = opts.places;
     // convert our string to tokens
     let tokens = tokenizer(str);
@@ -256,7 +256,7 @@
     // return lex if requested
     if (output === 'lex') return lex;
     // else calculate gender value
-    let gender = 0; // default to 'unknown'
+    let gender;
     if (lex < 0) {
       output === 'gender' ? gender = 'Male' : gender = -1;
     } else if (lex > 0) {
