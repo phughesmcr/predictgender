@@ -1,6 +1,6 @@
 /**
  * predictGender
- * v0.6.1
+ * v0.6.3
  *
  * Predict the gender of a string's author.
  *
@@ -23,14 +23,15 @@
  *
  * Usage example:
  * const pg = require('predictgender);
+ * // These are the default options
  * const opts = {
  *  'output': 'gender'
  *  'nGrams': true,
  *  'wcGrams': false,
  *  'sortBy': 'lex',
- *  'places': 7,
- *  'max': 3.5,
- *  'min': -0.3
+ *  'places': 16,
+ *  'max': 99,
+ *  'min': -99
  * }
  * const str = "A big long string of text...";
  * const gender = pg(str, opts);
@@ -38,7 +39,7 @@
  *
  * @param {string} str input string
  * @param {Object} opts options object
- * @return {(string|number)} predicted gender
+ * @return {(string|number|Array)} predicted gender or array of matches
  */
 
 'use strict'
@@ -56,7 +57,7 @@
       simplengrams = require('simplengrams');
       tokenizer = require('happynodetokenizer');
     } else {
-      throw new Error(`'require' undefined.`);
+      throw new Error(`predictGender required modules not found!`);
     }
   }
 
@@ -64,14 +65,14 @@
    * Get the indexes of duplicate elements in an array
    * @function indexesOf
    * @param  {Array} arr input array
-   * @param  {string} el element to test against
+   * @param  {string} str string to test against
    * @return {Array} array of indexes
    */
-  const indexesOf = (arr, el) => {
+  const indexesOf = (arr, str) => {
     const idxs = [];
     let i = arr.length;
     while (i--) {
-      if (arr[i] === el) {
+      if (arr[i] === str) {
         idxs.unshift(i);
       }
     }
@@ -101,7 +102,7 @@
    * @param  {string} by  what to sort by
    * @return {Array}
    */
-  const sortByUse = (arr, by) => {
+  const sortArrBy = (arr, by) => {
     let x = 3; // default to sort by lexical value
     if (by === 'weight') {
       x = 2;
@@ -115,7 +116,7 @@
   };
 
   /**
-   * Prepare an object to be sorted by sortByUse
+   * Prepare an object to be sorted by sortArrBy
    * @function prepareMatches
    * @param  {Object} obj input object
    * @param  {string} by  string
@@ -131,7 +132,7 @@
       lex = Number(lex.toFixed(places));
       matches.push([obj[word][0], obj[word][1], obj[word][2], lex]);
     }
-    return sortByUse(matches, by);
+    return sortArrBy(matches, by);
   };
 
   /**
@@ -183,8 +184,8 @@
   * @return {number} lexical value
   */
   const calcLex = (obj, wc, int, places) => {
-    let word;
     let lex = 0;
+    let word;
     for (word in obj) {
       if (!obj.hasOwnProperty(word)) continue;
       // (word frequency / total wordcount) * weight
@@ -198,9 +199,9 @@
 
   /**
   * @function predictGender
-  * @param {string} str string input
+  * @param {string} str input string
   * @param {Object} opts options object
-  * @return {(string|number)}
+  * @return {(string|number|Array)} predicted gender or array of matches
   */
   const predictGender = (str, opts) => {
     // no string return null
@@ -216,7 +217,7 @@
         'nGrams': true,
         'wcGrams': false,
         'sortBy': 'lex',
-        'places': 7,
+        'places': 16,
         'max': 99,
         'min': -99,
       };
@@ -225,7 +226,7 @@
     opts.sortBy = opts.sortBy || 'lex';
     opts.nGrams = opts.nGrams || true;
     opts.wcGrams = opts.wcGrams || false;
-    opts.places = opts.places || 7;
+    opts.places = opts.places || 16;
     opts.max = opts.max || 99;
     opts.min = opts.min || -99;
     let output = opts.output;
