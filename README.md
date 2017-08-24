@@ -11,7 +11,7 @@ const opts = {  // These are the default options:
   'min': Number.NEGATIVE_INFINITY,
   'nGrams': true,
   'output': 'gender',
-  'places': 16,
+  'places': 9,
   'sortBy': 'lex',
   'wcGrams': false,
 }
@@ -88,7 +88,7 @@ By default the array is sorted by final lexical value, this is so you can see wh
 
 Number of decimal places to limit outputted values to.
 
-The default is 16 decimal places as this is accuracy level the lexicon data provides.
+The default is 9 decimal places.
 
 ### 'max' and 'min'
 
