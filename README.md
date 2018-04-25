@@ -4,31 +4,36 @@ Predict the gender of a string's author.
 
 ## Usage
 ```javascript
-const pg = require('predictgender')
+const pg = require('predictgender');
 const opts = {  // These are the default options:
   'encoding': 'freq',
+  'locale': 'US',
+  'logs': 3,
   'max': Number.POSITIVE_INFINITY,
   'min': Number.NEGATIVE_INFINITY,
-  'nGrams': 'true',
-  'output': 'gender',
+  'nGrams': [2, 3],
+  'output': 'lex',
   'places': 9,
   'sortBy': 'lex',
   'wcGrams': 'false',
 }
-const text = 'A long string of text....'
-const gender = pg(text, opts)
-console.log(gender)
+const text = 'A long string of text....';
+const gender = pg(text, opts);
+console.log(gender); // { GENDER: -1.63736172 }
 ```
 
-**Please note: while 'output' will default to 'gender' if no option is presented, if an invalid option is presented (e.g. {output: 'nonesense'}), the module will return as if you had selected 'number' (see below!)**
+## Default output
+By default, predictGender will output an object with a 'GENDER' key and a lexical value:
+```javascript
+{ GENDER: -1.63736172 }
+```
 
 ## The Options Object
 
 The options object is optional and provides a number of controls to allow you to tailor the output to your needs. However, for general use it is recommended that all options are left to their defaults.
 
 ### 'encoding'
-
-**String - valid options: 'freq' (default), 'binary'**
+**String - valid options: 'freq' (default), 'binary', or 'percent'**
 
 Controls how the lexical value is calculated.
 
@@ -36,32 +41,62 @@ Frequency ('freq') encoding takes the overall wordcount and word frequency into 
 
 Binary is simply the addition of lexical weights, i.e. word1 + word2 + word3.
 
+Percent returns the percentage of token matches in each category as a decimal, i.e. 0.48 - 48%.
+
 It is recommended that this is always set to 'freq'.
 
 ### 'output'
+**String - valid options: 'lex' (default), 'gender', 'matches', 'number', or 'full'**
 
-**String - valid options: 'gender' (default), 'lex', 'matches', 'number', or 'full'**
+'lex' (Default) returns the lexical value, positive values being female, negative being male.
 
-'gender' (Default) returns a string, "Male", "Female", or "Unknown".
+'gender' returns a string, "Male", "Female", or "Unknown".
 
 'matches' returns an array of matched words along with the number of times each word appears, its weight, and its final lexical value (i.e. (appearances / word count) * weight). See the output section below for an example.
 
 'number' returns -1 for male, 0 for indeterminate or unknown, and 1 for female.
 
-'lex' returns the lexical value, positive values being female, negative being male.
-
 'full' returns an object with number, lex, and matches keys as above.
 
 ### 'nGrams'
 
-**String - valid options: 'true' (default) or 'false'**
+**Array - valid options: [ number, number, ...]**
 
 n-Grams are contiguous pieces of text, bi-grams being chunks of 2, tri-grams being chunks of 3, etc.
 
-Use the nGrams option to include (true) or exclude (false) n-grams. For accuracy it is recommended that n-grams are included, however including n-grams for very long strings can detrement performance.
+Use the nGrams option to include n-gram chunks. For example if you want to include both bi-grams and tri-grams, use like so:
+
+```javascript
+{
+  nGrams: [2, 3]
+}
+```
+
+If you only want to include tri-grams:
+
+```javascript
+{
+  nGrams: [3]
+}
+```
+
+If the number of words in the string is less than the ngram number provided, the option will simply be ignored.
+
+For accuracy it is recommended that n-grams are included, however including n-grams for very long strings can detrement performance.
+
+### 'locale'
+**String - valid options: 'US' (default), 'GB'**
+The lexicon data is in American English (US), if the string(s) you want to analyse are in British English set the locale option to 'GB'.
+
+### 'logs'
+**Number - valid options: 0, 1, 2, 3 (default)**
+Used to control console.log, console.warn, and console.error outputs.
+* 0 = suppress all logs
+* 1 = print errors only
+* 2 = print errors and warnings
+* 3 = print all console logs
 
 ### 'wcGrams'
-
 **String - valid options: 'true' or 'false' (default)**
 
 When set to true, the output from the nGrams option will be added to the word count.
@@ -69,7 +104,6 @@ When set to true, the output from the nGrams option will be added to the word co
 For accuracy it is recommended that this is set to false.
 
 ### 'sortBy'
-
 **String - valid options: 'lex' (default)', 'weight', or 'freq'**
 
 If 'output' = 'matches', this option can be used to control how the outputted array is sorted.
@@ -83,7 +117,6 @@ If 'output' = 'matches', this option can be used to control how the outputted ar
 By default the array is sorted by final lexical value, this is so you can see which words had the greatest impact on the prediction - i.e. the words at the beginning of the array will be the most masculine, progressing toward the most feminine words at the end on the array.
 
 ### 'places'
-
 **Number - valid options between 0 and 20 inclusive.**
 
 Number of decimal places to limit outputted values to.
@@ -91,7 +124,6 @@ Number of decimal places to limit outputted values to.
 The default is 9 decimal places.
 
 ### 'max' and 'min'
-
 **Float**
 
 Exclude words that have weights above the max threshold or below the min threshold.
@@ -131,7 +163,7 @@ Based on [Schwartz, H. A., Eichstaedt, J. C., Kern, M. L., Dziurzynski, L., Ramo
 ### Lexicon
 Using the gender lexicon data from [WWBP](http://www.wwbp.org/lexica.html) under the [Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported](http://creativecommons.org/licenses/by-nc-sa/3.0/).
 
-## Licence
-(C) 2017 [P. Hughes](https://www.phugh.es).
+## License
+(C) 2017-18 [P. Hughes](https://www.phugh.es). All rights reserved.
 
-[Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported](http://creativecommons.org/licenses/by-nc-sa/3.0/).
+Shared under the [Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported](http://creativecommons.org/licenses/by-nc-sa/3.0/) license.
