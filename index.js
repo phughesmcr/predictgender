@@ -1,6 +1,6 @@
 /**
  * predictGender
- * v1.0.0
+ * v2.0.0
  *
  * Predict the gender of a string's author.
  *
@@ -36,6 +36,8 @@
  * const str = 'A big long string of text...';
  * const gender = pg(str, opts);
  * console.log(gender)
+ * 
+ * See README.md for help.
  *
  * @param {string} str input string
  * @param {Object} opts options object
@@ -47,6 +49,7 @@
   const global = this;
   const previous = global.predictGender;
 
+  let async = global.async;
   let lexHelpers = global.lexHelpers;
   let lexicon = global.lexicon;
   let simplengrams = global.simplengrams;
@@ -54,17 +57,19 @@
 
   if (typeof lexicon === 'undefined') {
     if (typeof require !== 'undefined') {
+      async = require('async');
       lexHelpers = require('lex-helpers');
       lexicon = require('./data/lexicon.json');
       simplengrams = require('simplengrams');
       tokenizer = require('happynodetokenizer');
-    } else throw new Error('predictGender required modules not found!');
+    } else throw new Error('predictGender: required modules not found!');
   }
 
   const arr2string = lexHelpers.arr2string;
   const calcLex = lexHelpers.calcLex;
   const getMatches = lexHelpers.getMatches;
   const prepareMatches = lexHelpers.prepareMatches;
+  const itemCount = lexHelpers.itemCount;
 
   /**
   * @function predictGender
@@ -84,6 +89,7 @@
     str = str.toLowerCase().trim();
     // options defaults
     if (!opts || typeof opts !== 'object') {
+      console.warn('predictGender: using default options.');
       opts = {
         'encoding': 'freq',
         'max': Number.POSITIVE_INFINITY,
@@ -110,19 +116,26 @@
     let tokens = tokenizer(str);
     // if there are no tokens return unknown or 0
     if (!tokens) {
-      console.warn('predictGender: no tokens found. Returned 0.');
+      console.warn('predictGender: no tokens found. Returned 0 or "Unknown" depending on your output options.');
       return output === 'gender' ? 'Unknown' : 0;
     }
     // get wordcount before we add ngrams
     let wordcount = tokens.length;
     // get n-grams
-    if (opts.nGrams.toLowerCase() === 'true') {
-      const bigrams = arr2string(simplengrams(str, 2));
-      const trigrams = arr2string(simplengrams(str, 3));
-      tokens = tokens.concat(bigrams, trigrams);
+    if (opts.nGrams.toLowerCase() === 'true' && wordcount > 2) {
+      async.each([2, 3], function(n, callback) {
+        tokens = tokens.concat(
+          arr2string(simplengrams(str, n))
+        );
+        callback();
+      }, function(err) {
+        if (err) console.error(err);
+      });
     }
     // recalculate wordcount if wcGrams is true
     if (opts.wcGrams.toLowerCase() === 'true') wordcount = tokens.length;
+    // reduce tokens to count item
+    tokens = itemCount(tokens);
     // get matches from array
     const matches = getMatches(tokens, lexicon, opts.min, opts.max);
     // return match object if requested
@@ -147,16 +160,16 @@
       return lex;
     } else if (output === 'full') {
       // return lex and matches
-      const full = {};
-      full.number = gender;
-      full.lex = lex;
-      full.matches = prepareMatches(matches.GENDER, opts.sortBy, wordcount,
-          places, encoding);
-      return full;
+      return {
+        number: gender,
+        lex: lex,
+        matches: prepareMatches(matches.GENDER, opts.sortBy, wordcount,
+            places, encoding),
+      };
     } else {
       if (output !== 'gender' && output !== 'number') {
         console.warn('predictGender: output option ("' + output +
-            '") is invalid, returning {output: "number"}.');
+            '") is invalid, returning as {output: "number"}.');
       }
       // return gender string or number
       return gender;
