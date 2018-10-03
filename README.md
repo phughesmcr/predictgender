@@ -5,6 +5,24 @@ Predict the gender of a string's author.
 ## Usage
 ```javascript
 const pg = require('predictgender');
+const text = 'A long string of text....';
+const gender = pg(text);
+console.log(gender); // { GENDER: -1.63736172 }
+```
+
+## Default output
+By default, predictGender will output an object with a 'GENDER' key and a lexical value:
+```javascript
+{ GENDER: -1.63736172 }
+```
+Negative numbers (< 0) = Male, 0 = Unknown, Positive numbers (> 0) = Female.
+
+## The Options Object
+
+The options object is optional and provides a number of controls to allow you to tailor the output to your needs. However, for general use it is recommended that all options are left to their defaults.
+
+```javascript
+const pg = require('predictgender');
 // These are the default and recommended options
 const opts = {  
   'encoding': 'freq',
@@ -21,19 +39,6 @@ const text = 'A long string of text....';
 const gender = pg(text, opts);
 console.log(gender); // { GENDER: -1.63736172 }
 ```
-
-## Default output
-By default, predictGender will output an object with a 'GENDER' key and a lexical value:
-```javascript
-{ GENDER: -1.63736172 }
-```
-Negative numbers (< 0) = Male
-0 = Unknown
-Positive numbers (> 0) = Female
-
-## The Options Object
-
-The options object is optional and provides a number of controls to allow you to tailor the output to your needs. However, for general use it is recommended that all options are left to their defaults.
 
 ### 'encoding'
 **String - valid options: 'freq' (default), 'binary', or 'percent'**
